@@ -18,6 +18,7 @@
   let hasilTerakhir = null;
   let eventsBound = false;
   let hargaChart = null;
+  let currentUser = null;
 
   function el(id) {
     return document.getElementById(id);
@@ -281,8 +282,8 @@
     KalkulatorUtils.showToast("Form berhasil direset");
   }
 
-  function exportPDF() {
-    let result = KalkulatorStorage.readLatestTransaction();
+  async function exportPDF() {
+    let result = await KalkulatorStorage.readLatestTransaction();
     if (!result) {
       result = calculateAndSave({ showError: true });
     }
@@ -355,7 +356,9 @@
     });
     const exportBtn = el("exportPdfBtn");
     if (exportBtn) {
-      exportBtn.addEventListener("click", exportPDF);
+      exportBtn.addEventListener("click", function () {
+        exportPDF();
+      });
     }
     const resetBtn = el("resetBtn");
     if (resetBtn) {
@@ -384,6 +387,56 @@
         this.value = KalkulatorUtils.formatAngka(text);
         calculateAndSave();
       });
+    });
+  }
+
+  function updateAuthUI(session) {
+    currentUser = session && session.user ? session.user : null;
+    el("authStatus").textContent = currentUser ? currentUser.email : "Guest";
+    el("logoutBtn").classList.toggle("hidden", !currentUser);
+    el("authOpenBtn").classList.toggle("hidden", !!currentUser);
+  }
+
+  async function initAuth() {
+    const modal = el("authModal");
+    const openBtn = el("authOpenBtn");
+    const logoutBtn = el("logoutBtn");
+    const loginBtn = el("loginBtn");
+    const registerBtn = el("registerBtn");
+    const emailEl = el("authEmail");
+    const passEl = el("authPassword");
+
+    const session = await window.KalkulatorSupabase.getSession();
+    updateAuthUI(session);
+
+    openBtn.addEventListener("click", function () {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    });
+    logoutBtn.addEventListener("click", async function () {
+      await window.KalkulatorSupabase.signOut();
+      updateAuthUI(null);
+      KalkulatorUtils.showToast("Logout berhasil");
+    });
+    loginBtn.addEventListener("click", async function () {
+      try {
+        await window.KalkulatorSupabase.signIn(emailEl.value.trim(), passEl.value);
+        const s = await window.KalkulatorSupabase.getSession();
+        updateAuthUI(s);
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+        KalkulatorUtils.showToast("Login berhasil");
+      } catch (error) {
+        KalkulatorUtils.showToast("Login gagal");
+      }
+    });
+    registerBtn.addEventListener("click", async function () {
+      try {
+        await window.KalkulatorSupabase.signUp(emailEl.value.trim(), passEl.value);
+        KalkulatorUtils.showToast("Register sukses, cek email verifikasi");
+      } catch (error) {
+        KalkulatorUtils.showToast("Register gagal");
+      }
     });
   }
 
@@ -418,6 +471,7 @@
       }
       KalkulatorUtils.showToast("Memuat data transaksi...");
       bindEvents();
+      initAuth();
       restoreData(KalkulatorStorage.readLastCalculation());
       KalkulatorStorage.loadTransactionsHybrid()
         .then(function (result) {
@@ -444,7 +498,9 @@
 
   window.setTimeout(hideSplash, 2200);
   registerServiceWorker();
-  window.exportPDF = exportPDF;
+  window.exportPDF = function () {
+    exportPDF();
+  };
   window.simpanRiwayat = simpanRiwayat;
 })();
 

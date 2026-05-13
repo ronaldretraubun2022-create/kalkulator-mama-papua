@@ -27,5 +27,31 @@
   window.KalkulatorSupabase = {
     client: createClientSafe(),
     table: "Riwayat",
+    async getSession() {
+      const client = this.client;
+      if (!client) return null;
+      const { data } = await client.auth.getSession();
+      return data && data.session ? data.session : null;
+    },
+    async signIn(email, password) {
+      const client = this.client;
+      if (!client) throw new Error("Supabase belum siap");
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      return data;
+    },
+    async signUp(email, password) {
+      const client = this.client;
+      if (!client) throw new Error("Supabase belum siap");
+      const { data, error } = await client.auth.signUp({ email, password });
+      if (error) throw error;
+      return data;
+    },
+    async signOut() {
+      const client = this.client;
+      if (!client) return;
+      const { error } = await client.auth.signOut();
+      if (error) throw error;
+    },
   };
 })();

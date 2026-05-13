@@ -52,6 +52,22 @@
 
   <body
     class="min-h-screen overflow-x-hidden bg-[linear-gradient(135deg,#0f0f0f_0%,#1a1110_40%,#102117_100%)] bg-fixed text-[#fff7d6] antialiased">
+    <div class="fixed right-4 top-4 z-40 flex items-center gap-2">
+      <span id="authStatus" class="rounded-xl bg-[#0f0f0f]/70 px-3 py-2 text-xs font-bold text-mama-gold">Guest</span>
+      <button id="authOpenBtn" type="button" class="rounded-xl bg-mama-gold px-3 py-2 text-xs font-black text-black">Login</button>
+      <button id="logoutBtn" type="button" class="hidden rounded-xl bg-[#C44A3D] px-3 py-2 text-xs font-black text-[#fff7d6]">Logout</button>
+    </div>
+    <div id="authModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+      <div class="w-full max-w-sm rounded-2xl border border-[#F2D479]/30 bg-[#1a1110] p-5">
+        <h3 class="text-lg font-black text-mama-gold">Login User</h3>
+        <input id="authEmail" class="field-input mt-3" type="email" placeholder="Email" />
+        <input id="authPassword" class="field-input mt-3" type="password" placeholder="Password" />
+        <div class="mt-4 flex gap-2">
+          <button id="loginBtn" type="button" class="action-button flex-1 bg-mama-gold text-black">Login</button>
+          <button id="registerBtn" type="button" class="action-button flex-1 bg-mama-green text-[#fff7d6]">Register</button>
+        </div>
+      </div>
+    </div>
     <div
       id="splashScreen"
       class="splash-screen fixed inset-0 z-50 flex flex-col items-center justify-center bg-mama-navy text-[#fff7d6]">
@@ -378,8 +394,6 @@
     <script src="./js/utils.js?v=7"></script>
     <script src="./js/supabase.js?v=1"></script>
     <script src="./js/storage.js?v=7"></script>
-    <script src="./js/app.js?v=7"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase.js"></script>
+    <script src="./js/app.js?v=8"></script>
   </body>
 </html>
