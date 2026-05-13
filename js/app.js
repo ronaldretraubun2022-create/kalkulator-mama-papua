@@ -322,16 +322,22 @@
     KalkulatorUtils.showToast("PDF berhasil dibuat");
   }
 
-  function simpanRiwayat() {
+  async function simpanRiwayat() {
     const result = calculateAndSave({ showError: true });
     if (!result) {
       KalkulatorUtils.showToast("Gagal simpan: data belum lengkap");
       return;
     }
     try {
-      KalkulatorStorage.saveTransaction(result);
+      const saveInfo = await KalkulatorStorage.saveTransactionHybrid(result);
       KalkulatorStorage.saveLastCalculation(result);
-      KalkulatorUtils.showToast("Data berhasil disimpan");
+      if (saveInfo.source === "supabase") {
+        KalkulatorUtils.showToast("Data tersimpan ke Supabase");
+      } else if (saveInfo.source === "local_offline" || saveInfo.source === "local_fallback") {
+        KalkulatorUtils.showToast("Offline: data disimpan lokal");
+      } else {
+        KalkulatorUtils.showToast("Data berhasil disimpan");
+      }
     } catch (error) {
       console.error("Simpan transaksi gagal:", error);
       KalkulatorUtils.showToast("Gagal simpan data");
@@ -410,8 +416,24 @@
       if (window.lucide) {
         window.lucide.createIcons();
       }
+      KalkulatorUtils.showToast("Memuat data transaksi...");
       bindEvents();
       restoreData(KalkulatorStorage.readLastCalculation());
+      KalkulatorStorage.loadTransactionsHybrid()
+        .then(function (result) {
+          const latest = result && result.data && result.data.length ? result.data[0] : null;
+          if (latest) {
+            KalkulatorStorage.saveLastCalculation({ ...KalkulatorStorage.readLastCalculation(), ...latest });
+          }
+          if (result && result.source === "supabase") {
+            KalkulatorUtils.showToast("Data transaksi tersinkron");
+          } else if (result && result.source === "local_fallback") {
+            KalkulatorUtils.showToast("Koneksi bermasalah, pakai data lokal");
+          }
+        })
+        .catch(function () {
+          KalkulatorUtils.showToast("Gagal memuat dari database");
+        });
       if (!hasilTerakhir) resetResult();
     } catch (error) {
       console.error("Init kalkulator gagal:", error);
