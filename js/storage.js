@@ -18,7 +18,10 @@ const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
   }
 
   function setRiwayat(userId, list) {
-    localStorage.setItem(userScopedKey(userId), JSON.stringify(Array.isArray(list) ? list : []));
+    localStorage.setItem(
+      userScopedKey(userId),
+      JSON.stringify(Array.isArray(list) ? list : []),
+    );
   }
 
   function readLastCalculation() {
@@ -77,23 +80,31 @@ const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
 
     const supabase = window.KalkulatorSupabase.client;
     const table = window.KalkulatorSupabase.table || "Riwayat";
-    if (!navigator.onLine || !supabase) return { source: "local_offline", item: localItem };
+    if (!navigator.onLine || !supabase)
+      return { source: "local_offline", item: localItem };
 
     const { error, data: inserted } = await supabase
       .from(table)
-      .insert([{
-        user_id: userId,
-        nama_barang: localItem.namaBarang,
-        jumlah_barang: localItem.jumlahBarang,
-        total_biaya: localItem.totalBiayaProduksi,
-        modal_barang: localItem.modalPerBarang,
-        harga_reguler: localItem.hargaReguler,
-        harga_premium: localItem.hargaPremium,
-        harga_kolektor: localItem.hargaKolektor,
-      }])
+      .insert([
+        {
+          user_id: userId,
+          nama_barang: localItem.namaBarang,
+          jumlah_barang: localItem.jumlahBarang,
+          total_biaya: localItem.totalBiayaProduksi,
+          modal_barang: localItem.modalPerBarang,
+          harga_reguler: localItem.hargaReguler,
+          harga_premium: localItem.hargaPremium,
+          harga_kolektor: localItem.hargaKolektor,
+        },
+      ])
       .select()
       .single();
-    if (error) return { source: "local_fallback", item: localItem, error: error.message };
+    if (error)
+      return {
+        source: "local_fallback",
+        item: localItem,
+        error: error.message,
+      };
     return { source: "supabase", item: localItem, remote: inserted };
   }
 
@@ -109,11 +120,14 @@ const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
 
     const { data, error } = await supabase
       .from(table)
-      .select("id,user_id,nama_barang,jumlah_barang,total_biaya,modal_barang,harga_reguler,harga_premium,harga_kolektor")
+      .select(
+        "id,user_id,nama_barang,jumlah_barang,total_biaya,modal_barang,harga_reguler,harga_premium,harga_kolektor",
+      )
       .eq("user_id", userId)
       .order("id", { ascending: false })
       .limit(100);
-    if (error) return { source: "local_fallback", data: local, error: error.message };
+    if (error)
+      return { source: "local_fallback", data: local, error: error.message };
     const mapped = (data || []).map(mapRowToApp);
     setRiwayat(userId, mapped);
     return { source: "supabase", data: mapped };

@@ -332,7 +332,9 @@
     try {
       const saveInfo = await KalkulatorStorage.saveTransaction(result);
       KalkulatorStorage.saveLastCalculation(result);
-      if (saveInfo.source === "supabase") {
+      if (saveInfo.source === "blocked_no_auth") {
+        KalkulatorUtils.showToast("Login dulu untuk simpan data");
+      } else if (saveInfo.source === "supabase") {
         KalkulatorUtils.showToast("Data tersimpan ke Supabase");
       } else if (saveInfo.source === "local_offline" || saveInfo.source === "local_fallback") {
         KalkulatorUtils.showToast("Offline: data disimpan lokal");
