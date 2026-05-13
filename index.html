@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1a1110" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-title"
+      content="Kalkulator Jual Beli Mama Papua" />
+    <meta
+      name="description"
+      content="Kalkulator harga jual produk Mama Papua dengan biaya produksi, margin, dan nilai budaya." />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" href="icons/icon-192.png" />
+    <title>Kalkulator Jual Beli Mama Papua</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      if (window.tailwind) {
+        window.tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                mama: {
+                  navy: "#0f0f0f",
+                  card: "#1a1110",
+                  gold: "#F2D479",
+                  green: "#6FAF4F",
+                  maroon: "#C44A3D",
+                  orange: "#D97A2B",
+                },
+              },
+              boxShadow: {
+                glow: "0 20px 55px rgba(0, 0, 0, 0.36)",
+              },
+            },
+          },
+        };
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="./css/styles.css?v=4" />
+  </head>
+
+  <body
+    class="min-h-screen overflow-x-hidden bg-[linear-gradient(135deg,#0f0f0f_0%,#1a1110_40%,#102117_100%)] bg-fixed text-[#fff7d6] antialiased">
+    <div
+      id="splashScreen"
+      class="splash-screen fixed inset-0 z-50 flex flex-col items-center justify-center bg-mama-navy text-[#fff7d6]">
+      <img
+        src="icons/icon-192.png"
+        alt="Kalkulator Jual Beli Mama Papua"
+        class="splash-logo mb-5 h-28 w-28 rounded-3xl border-4 border-mama-gold shadow-2xl" />
+      <h1 class="splash-title px-6 text-center text-3xl font-black">
+        Kalkulator Jual Beli Mama Papua
+      </h1>
+      <p class="mt-2 text-center text-base font-bold text-yellow-200">
+        Hitung harga jual yang adil
+      </p>
+      <div class="mt-7 h-3 w-56 overflow-hidden rounded-full bg-[#F2D479]/20">
+        <div class="loading-bar h-full rounded-full bg-mama-gold"></div>
+      </div>
+    </div>
+
+    <main id="mainApp" class="opacity-0 transition duration-500">
+      <header
+        class="overflow-hidden rounded-b-[2.5rem] border-b border-[#F2D479]/30 bg-gradient-to-br from-[#0f0f0f] via-[#1a1110] to-[#102117] shadow-[0_34px_90px_rgba(0,0,0,.55)]">
+        <div
+          class="mx-auto flex min-h-[300px] max-w-7xl items-center justify-center px-4 py-10 text-center sm:min-h-[360px] sm:px-6 sm:py-14">
+          <div
+            class="mx-auto max-w-4xl rounded-3xl border border-[#F2D479]/20 bg-[#0f0f0f]/35 p-5 shadow-2xl backdrop-blur-sm sm:p-7">
+            <h1
+              class="drop-shadow-[0_6px_18px_rgba(0,0,0,.75)] text-[clamp(2.4rem,12vw,5.5rem)] font-black leading-[0.95] text-mama-gold">
+              KALKULATOR MAMA PAPUA
+            </h1>
+          </div>
+        </div>
+      </header>
+
+      <section
+        class="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(360px,.9fr)] lg:items-start">
+        <form
+          id="calculatorForm"
+          class="overflow-hidden rounded-3xl border border-[#F2D479]/20 bg-gradient-to-br from-[#1a1110]/95 via-[#0f0f0f]/95 to-[#102117]/90 p-5 shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:shadow-[0_32px_80px_rgba(0,0,0,.52)] sm:p-7">
+          <h2 class="mb-5 text-2xl font-black text-mama-gold sm:text-3xl">
+            Isi Data Produk
+          </h2>
+
+          <div class="grid gap-5 md:grid-cols-2">
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="namaBarang"
+                >Nama Barang</label
+              >
+              <input
+                id="namaBarang"
+                class="field-input"
+                placeholder="Contoh: Pinang, noken, ikan asap"
+                autocomplete="off" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="jumlahBarang"
+                >Jumlah Barang Jadi</label
+              >
+              <input
+                id="jumlahBarang"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 10" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="ongkosBahan"
+                >Ongkos Bahan</label
+              >
+              <input
+                id="ongkosBahan"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 50.000" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="ongkosTransportasi"
+                >Ongkos Transportasi</label
+              >
+              <input
+                id="ongkosTransportasi"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 20.000" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="jumlahOrang"
+                >Jumlah Orang Kerja</label
+              >
+              <input
+                id="jumlahOrang"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 2" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="hariKerja"
+                >Jumlah Hari Kerja</label
+              >
+              <input
+                id="hariKerja"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 5" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="jamKerjaPerHari"
+                >Jam Kerja per Hari</label
+              >
+              <input
+                id="jamKerjaPerHari"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 8" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="upahPerOrang"
+                >Upah per Orang</label
+              >
+              <input
+                id="upahPerOrang"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 50.000" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="biayaKemasan"
+                >Kemasan / Plastik</label
+              >
+              <input
+                id="biayaKemasan"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 10.000" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="biayaSewa"
+                >Listrik / Sewa Tempat</label
+              >
+              <input
+                id="biayaSewa"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 15.000" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="biayaLain"
+                >Biaya Lain-lain</label
+              >
+              <input
+                id="biayaLain"
+                class="field-input angka"
+                inputmode="numeric"
+                placeholder="Contoh: 5.000" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="marginKeuntungan"
+                >Margin Keuntungan (%)</label
+              >
+              <input
+                id="marginKeuntungan"
+                class="field-input angka"
+                inputmode="numeric"
+                value="30" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="nilaiBudaya"
+                >Nilai Budaya (%)</label
+              >
+              <input
+                id="nilaiBudaya"
+                class="field-input angka"
+                inputmode="numeric"
+                value="20" />
+            </div>
+            <div>
+              <label
+                class="mb-2 block text-lg font-black text-mama-gold"
+                for="nilaiKolektor"
+                >Nilai Kolektor (%)</label
+              >
+              <input
+                id="nilaiKolektor"
+                class="field-input angka"
+                inputmode="numeric"
+                value="50" />
+            </div>
+          </div>
+
+          <div class="mt-7 flex flex-col gap-4 sm:flex-row">
+            <button
+              id="hitungBtn"
+              type="submit"
+              class="action-button inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#F2D479] to-[#D97A2B] text-black shadow-xl hover:-translate-y-1 hover:brightness-110">
+              <i data-lucide="calculator" class="h-5 w-5"></i>
+              <span>HITUNG HARGA</span>
+            </button>
+            <button
+              id="exportPdfBtn"
+              type="button"
+              onclick="exportPDF()"
+              class="action-button inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#6FAF4F] to-[#2d7a22] text-[#fff7d6] shadow-xl hover:-translate-y-1 hover:brightness-110">
+              <i data-lucide="file-down" class="h-5 w-5"></i>
+              <span>EXPORT PDF</span>
+            </button>
+            <button
+              id="simpanBtn"
+              type="button"
+              onclick="simpanRiwayat()"
+              class="action-button inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#6FAF4F] to-[#102117] text-[#fff7d6] shadow-xl hover:-translate-y-1 hover:brightness-110">
+              <i data-lucide="save" class="h-5 w-5"></i>
+              <span>SIMPAN</span>
+            </button>
+          </div>
+          <p
+            id="formError"
+            class="mt-4 hidden rounded-2xl bg-[#C44A3D]/20 p-4 font-bold text-[#F2D479]"></p>
+        </form>
+
+        <aside
+          class="overflow-hidden rounded-3xl border border-[#F2D479]/20 bg-gradient-to-br from-[#1a1110]/95 via-[#0f0f0f]/95 to-[#102117]/90 p-5 shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:shadow-[0_32px_80px_rgba(0,0,0,.52)] sm:p-7 lg:sticky lg:top-6">
+          <h2
+            class="mb-5 inline-flex items-center gap-2 text-2xl font-black text-mama-gold sm:text-3xl">
+            <i data-lucide="badge-dollar-sign" class="h-7 w-7"></i>
+            Hasil Harga
+          </h2>
+
+          <div class="space-y-4">
+            <article
+              class="result-card border-[#D97A2B] bg-gradient-to-br from-[#1a1110]/90 to-[#0f0f0f]/70 shadow-xl">
+              <p>Total Biaya Produksi</p>
+              <h3 id="totalBiayaProduksi">Rp 0</h3>
+            </article>
+            <article
+              class="result-card border-[#F2D479] bg-gradient-to-br from-[#1a1110]/85 to-[#0f0f0f]/70 shadow-xl">
+              <p>Modal Per Barang</p>
+              <h3 id="modalPerBarang">Rp 0</h3>
+            </article>
+            <article
+              class="result-card border-[#6FAF4F] bg-gradient-to-br from-[#102117]/90 to-[#0f0f0f]/70 shadow-xl">
+              <p>Harga Reguler</p>
+              <h3 id="hargaReguler">Rp 0</h3>
+            </article>
+            <article
+              class="result-card border-[#6FAF4F] bg-gradient-to-br from-[#102117]/85 to-[#1a1110]/70 shadow-xl">
+              <p>Harga Premium</p>
+              <h3 id="hargaPremium">Rp 0</h3>
+            </article>
+            <article
+              class="result-card border-[#C44A3D] bg-gradient-to-br from-[#1a1110]/90 to-[#0f0f0f]/75 shadow-xl">
+              <p>Harga Kolektor</p>
+              <h3 id="hargaKolektor">Rp 0</h3>
+            </article>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <article
+                class="rounded-3xl border border-[#F2D479]/60 bg-[#0f0f0f]/40 p-4 shadow-xl">
+                <p class="font-black text-mama-gold">Margin Keuntungan</p>
+                <h3 id="marginDisplay" class="mt-2 text-2xl font-black">30%</h3>
+              </article>
+              <article
+                class="rounded-3xl border border-[#F2D479]/60 bg-[#0f0f0f]/40 p-4 shadow-xl">
+                <p class="font-black text-mama-gold">Nilai Budaya</p>
+                <h3 id="budayaDisplay" class="mt-2 text-2xl font-black">20%</h3>
+              </article>
+            </div>
+          </div>
+
+          <div
+            id="penjelasanBox"
+            class="mt-5 overflow-hidden rounded-3xl border-l-8 border-mama-gold bg-[#f8edc6] p-5 text-[#1a1110] shadow-2xl">
+            <h3
+              class="inline-flex items-center gap-2 text-xl font-black text-[#102117]">
+              <i data-lucide="info" class="h-5 w-5"></i>
+              Penjelasan
+            </h3>
+            <p id="penjelasan" class="mt-2 text-base font-bold leading-relaxed">
+              Isi data produk untuk melihat harga jual yang adil.
+            </p>
+          </div>
+
+          <div
+            class="mt-5 overflow-hidden rounded-3xl border border-[#F2D479]/20 bg-[#0f0f0f]/40 p-5 shadow-2xl">
+            <h3
+              class="inline-flex items-center gap-2 text-xl font-black text-mama-gold">
+              <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
+              Grafik Harga
+            </h3>
+            <div class="mt-3 h-72">
+              <canvas id="hargaChart"></canvas>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <div
+      id="toast"
+      class="fixed bottom-4 left-4 right-4 z-40 hidden rounded-2xl bg-mama-gold p-4 text-center font-black text-black shadow-2xl sm:left-auto sm:w-96"></div>
+
+    <script src="./js/utils.js"></script>
+    <script src="./js/storage.js"></script>
+    <script src="./js/app.js"></script>
+  </body>
+</html>

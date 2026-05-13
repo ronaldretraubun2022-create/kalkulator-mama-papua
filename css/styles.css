@@ -1,0 +1,178 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family:
+    "Trebuchet MS",
+    "Segoe UI",
+    sans-serif;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(111, 175, 79, 0.18), transparent 30%),
+    radial-gradient(circle at 84% 10%, rgba(242, 212, 121, 0.1), transparent 26%),
+    linear-gradient(135deg, #0f0f0f 0%, #1a1110 40%, #102117 100%);
+  background-attachment: fixed;
+  transition: background 280ms ease;
+}
+
+header {
+  background-image:
+    linear-gradient(
+      135deg,
+      rgba(15, 15, 15, 0.96) 0%,
+      rgba(26, 17, 16, 0.94) 40%,
+      rgba(16, 33, 23, 0.96) 100%
+    ) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.55);
+}
+
+#calculatorForm,
+main aside {
+  background:
+    linear-gradient(145deg, rgba(26, 17, 16, 0.96), rgba(15, 15, 15, 0.92));
+  border-color: rgba(242, 212, 121, 0.34);
+  box-shadow: 0 30px 80px rgba(196, 74, 61, 0.16), 0 18px 50px rgba(0, 0, 0, 0.46);
+}
+
+button,
+input,
+select {
+  min-height: 48px;
+}
+
+button {
+  transition:
+    transform 180ms ease,
+    filter 180ms ease,
+    box-shadow 180ms ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.loading-bar {
+  width: 42%;
+  animation: loadingMove 1.15s ease-in-out infinite;
+}
+
+.splash-screen {
+  animation: splashIn 480ms ease both;
+}
+
+.splash-logo,
+.splash-title {
+  animation: splashScale 850ms ease both;
+}
+
+.splash-out {
+  animation: splashOut 350ms ease forwards;
+}
+
+.field-input {
+  width: 100%;
+  border: 3px solid #F2D479;
+  border-radius: 1rem;
+  background: #f6e6b2;
+  color: #1a1110;
+  font-size: 1.125rem;
+  font-weight: 900;
+  outline: none;
+  padding: 1rem;
+}
+
+.field-input:focus {
+  box-shadow: 0 0 0 4px rgba(217, 122, 43, 0.22);
+}
+
+.action-button {
+  border-radius: 1rem;
+  font-size: 1.125rem;
+  font-weight: 900;
+  padding: 1.1rem 1rem;
+  text-transform: uppercase;
+  box-shadow: 0 16px 34px rgba(196, 74, 61, 0.18), 0 14px 34px rgba(0, 0, 0, 0.34);
+}
+
+.action-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 44px rgba(217, 122, 43, 0.2), 0 22px 44px rgba(0, 0, 0, 0.42);
+}
+
+.result-card {
+  border-width: 2px;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  padding: 1.15rem;
+  box-shadow: inset 0 1px 0 rgba(242, 212, 121, 0.1), 0 18px 38px rgba(0, 0, 0, 0.28);
+}
+
+.result-card p {
+  color: #F2D479;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.result-card h3 {
+  color: #6FAF4F;
+  font-size: clamp(1.65rem, 5vw, 2.35rem);
+  font-weight: 950;
+  line-height: 1.12;
+  margin-top: 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+#hargaChart {
+  max-width: 100%;
+}
+
+@keyframes loadingMove {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  55% {
+    transform: translateX(170%);
+  }
+
+  100% {
+    transform: translateX(360%);
+  }
+}
+
+@keyframes splashIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes splashScale {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes splashOut {
+  to {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
