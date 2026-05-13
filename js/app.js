@@ -18,7 +18,7 @@
   let hasilTerakhir = null;
   let eventsBound = false;
   let hargaChart = null;
-  let currentUser = null;
+  let currentUserCode = "";
 
   function el(id) {
     return document.getElementById(id);
@@ -392,11 +392,11 @@
     });
   }
 
-  function updateAuthUI(session) {
-    currentUser = session && session.user ? session.user : null;
-    el("authStatus").textContent = currentUser ? currentUser.email : "Guest";
-    el("logoutBtn").classList.toggle("hidden", !currentUser);
-    el("authOpenBtn").classList.toggle("hidden", !!currentUser);
+  function updateAuthUI() {
+    currentUserCode = KalkulatorStorage.readUserCode();
+    el("authStatus").textContent = currentUserCode || "Belum Ada Kode";
+    el("logoutBtn").classList.toggle("hidden", !currentUserCode);
+    el("authOpenBtn").classList.toggle("hidden", !!currentUserCode);
   }
 
   async function initAuth() {
@@ -404,41 +404,29 @@
     const openBtn = el("authOpenBtn");
     const logoutBtn = el("logoutBtn");
     const loginBtn = el("loginBtn");
-    const registerBtn = el("registerBtn");
-    const emailEl = el("authEmail");
-    const passEl = el("authPassword");
-
-    const session = await window.KalkulatorSupabase.getSession();
-    updateAuthUI(session);
+    const codeEl = el("authCode");
+    updateAuthUI();
 
     openBtn.addEventListener("click", function () {
       modal.classList.remove("hidden");
       modal.classList.add("flex");
     });
-    logoutBtn.addEventListener("click", async function () {
-      await window.KalkulatorSupabase.signOut();
-      updateAuthUI(null);
+    logoutBtn.addEventListener("click", function () {
+      KalkulatorStorage.clearUserCode();
+      updateAuthUI();
       KalkulatorUtils.showToast("Logout berhasil");
     });
-    loginBtn.addEventListener("click", async function () {
-      try {
-        await window.KalkulatorSupabase.signIn(emailEl.value.trim(), passEl.value);
-        const s = await window.KalkulatorSupabase.getSession();
-        updateAuthUI(s);
-        modal.classList.add("hidden");
-        modal.classList.remove("flex");
-        KalkulatorUtils.showToast("Login berhasil");
-      } catch (error) {
-        KalkulatorUtils.showToast("Login gagal");
+    loginBtn.addEventListener("click", function () {
+      const code = (codeEl.value || "").trim().toUpperCase();
+      if (!code) {
+        KalkulatorUtils.showToast("Isi Kode User dulu");
+        return;
       }
-    });
-    registerBtn.addEventListener("click", async function () {
-      try {
-        await window.KalkulatorSupabase.signUp(emailEl.value.trim(), passEl.value);
-        KalkulatorUtils.showToast("Register sukses, cek email verifikasi");
-      } catch (error) {
-        KalkulatorUtils.showToast("Register gagal");
-      }
+      KalkulatorStorage.saveUserCode(code);
+      updateAuthUI();
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      KalkulatorUtils.showToast("Kode User aktif");
     });
   }
 

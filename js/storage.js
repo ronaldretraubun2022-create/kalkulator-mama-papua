@@ -1,46 +1,53 @@
 const STORAGE_KEY = "kalkulator-jual-beli-mama-papua-v1";
+const USER_CODE_KEY = "kalkulator-mama-papua-kode-user";
 const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
 
 (function () {
-  function userScopedKey(userId) {
-    return `${TRANSACTIONS_KEY}:${userId || "guest"}`;
+  function readUserCode() {
+    return (localStorage.getItem(USER_CODE_KEY) || "").trim().toUpperCase();
   }
-
-  function getRiwayat(userId) {
+  function saveUserCode(code) {
+    localStorage.setItem(
+      USER_CODE_KEY,
+      String(code || "")
+        .trim()
+        .toUpperCase(),
+    );
+  }
+  function clearUserCode() {
+    localStorage.removeItem(USER_CODE_KEY);
+  }
+  function scopedKey(kodeUser) {
+    return `${TRANSACTIONS_KEY}:${(kodeUser || "guest").toUpperCase()}`;
+  }
+  function getRiwayat(kodeUser) {
     try {
-      const raw = localStorage.getItem(userScopedKey(userId));
+      const raw = localStorage.getItem(scopedKey(kodeUser));
       const parsed = raw ? JSON.parse(raw) : [];
       return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.error("Gagal membaca riwayat lokal:", error);
+    } catch (_) {
       return [];
     }
   }
-
-  function setRiwayat(userId, list) {
+  function setRiwayat(kodeUser, list) {
     localStorage.setItem(
-      userScopedKey(userId),
+      scopedKey(kodeUser),
       JSON.stringify(Array.isArray(list) ? list : []),
     );
   }
-
   function readLastCalculation() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (error) {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    } catch (_) {
       return null;
     }
   }
-
   function saveLastCalculation(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data || null));
   }
-
   function clearLastCalculation() {
     localStorage.removeItem(STORAGE_KEY);
   }
-
   function mapRowToApp(row) {
     return {
       id: String(row.id || ""),
@@ -52,18 +59,16 @@ const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
       hargaReguler: Number(row.harga_reguler || 0),
       hargaPremium: Number(row.harga_premium || 0),
       hargaKolektor: Number(row.harga_kolektor || 0),
-      userId: row.user_id || null,
+      kodeUser: row.kode_user || "",
     };
   }
-
   async function saveTransaction(data) {
-    const session = await window.KalkulatorSupabase.getSession();
-    if (!session || !session.user) return { source: "blocked_no_auth" };
-    const userId = session.user.id;
-
+    const kodeUser = readUserCode();
+    if (!kodeUser) return { source: "blocked_no_auth" };
     const localItem = {
       id: window.KalkulatorUtils.uid(),
       savedAt: new Date().toISOString(),
+      kodeUser,
       namaBarang: data.namaBarang || "Tanpa Nama",
       jumlahBarang: Number(data.jumlahBarang || 0),
       totalBiayaProduksi: Number(data.totalBiayaProduksi || 0),
@@ -71,23 +76,22 @@ const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
       hargaReguler: Number(data.hargaReguler || 0),
       hargaPremium: Number(data.hargaPremium || 0),
       hargaKolektor: Number(data.hargaKolektor || 0),
-      userId,
     };
-
-    const current = getRiwayat(userId);
+    const current = getRiwayat(kodeUser);
     current.unshift(localItem);
-    setRiwayat(userId, current);
-
-    const supabase = window.KalkulatorSupabase.client;
-    const table = window.KalkulatorSupabase.table || "Riwayat";
+    setRiwayat(kodeUser, current);
+    const supabase =
+      window.KalkulatorSupabase && window.KalkulatorSupabase.client;
+    const table =
+      (window.KalkulatorSupabase && window.KalkulatorSupabase.table) ||
+      "Riwayat";
     if (!navigator.onLine || !supabase)
       return { source: "local_offline", item: localItem };
-
-    const { error, data: inserted } = await supabase
+    const { data: inserted, error } = await supabase
       .from(table)
       .insert([
         {
-          user_id: userId,
+          kode_user: kodeUser,
           nama_barang: localItem.namaBarang,
           jumlah_barang: localItem.jumlahBarang,
           total_biaya: localItem.totalBiayaProduksi,
@@ -107,44 +111,42 @@ const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
       };
     return { source: "supabase", item: localItem, remote: inserted };
   }
-
   async function loadTransactions() {
-    const session = await window.KalkulatorSupabase.getSession();
-    if (!session || !session.user) return { source: "no_auth", data: [] };
-    const userId = session.user.id;
-    const local = getRiwayat(userId);
-    const supabase = window.KalkulatorSupabase.client;
-    const table = window.KalkulatorSupabase.table || "Riwayat";
-
+    const kodeUser = readUserCode();
+    if (!kodeUser) return { source: "no_code", data: [] };
+    const local = getRiwayat(kodeUser);
+    const supabase =
+      window.KalkulatorSupabase && window.KalkulatorSupabase.client;
+    const table =
+      (window.KalkulatorSupabase && window.KalkulatorSupabase.table) ||
+      "Riwayat";
     if (!navigator.onLine || !supabase) return { source: "local", data: local };
-
     const { data, error } = await supabase
       .from(table)
       .select(
-        "id,user_id,nama_barang,jumlah_barang,total_biaya,modal_barang,harga_reguler,harga_premium,harga_kolektor",
+        "id,kode_user,nama_barang,jumlah_barang,total_biaya,modal_barang,harga_reguler,harga_premium,harga_kolektor",
       )
-      .eq("user_id", userId)
+      .eq("kode_user", kodeUser)
       .order("id", { ascending: false })
       .limit(100);
     if (error)
       return { source: "local_fallback", data: local, error: error.message };
     const mapped = (data || []).map(mapRowToApp);
-    setRiwayat(userId, mapped);
+    setRiwayat(kodeUser, mapped);
     return { source: "supabase", data: mapped };
   }
-
   async function loadTransactionsHybrid() {
     return loadTransactions();
   }
-
   async function readLatestTransaction() {
-    const session = await window.KalkulatorSupabase.getSession();
-    const userId = session && session.user ? session.user.id : null;
-    const all = getRiwayat(userId);
+    const kodeUser = readUserCode();
+    const all = getRiwayat(kodeUser);
     return all.length ? all[0] : null;
   }
-
   window.KalkulatorStorage = {
+    readUserCode,
+    saveUserCode,
+    clearUserCode,
     readLastCalculation,
     saveLastCalculation,
     clearLastCalculation,
