@@ -282,8 +282,14 @@
   }
 
   function exportPDF() {
-    const result = calculateAndSave({ showError: true });
-    if (!result) return;
+    let result = KalkulatorStorage.readLatestTransaction();
+    if (!result) {
+      result = calculateAndSave({ showError: true });
+    }
+    if (!result) {
+      KalkulatorUtils.showToast("Data belum ada untuk diexport");
+      return;
+    }
     const jsPdfLib = window.jspdf;
     if (!jsPdfLib || !jsPdfLib.jsPDF) {
       KalkulatorUtils.showToast("Library PDF belum siap");
@@ -314,6 +320,22 @@
 
     doc.save("laporan-harga-ekraf.pdf");
     KalkulatorUtils.showToast("PDF berhasil dibuat");
+  }
+
+  function simpanRiwayat() {
+    const result = calculateAndSave({ showError: true });
+    if (!result) {
+      KalkulatorUtils.showToast("Gagal simpan: data belum lengkap");
+      return;
+    }
+    try {
+      KalkulatorStorage.saveTransaction(result);
+      KalkulatorStorage.saveLastCalculation(result);
+      KalkulatorUtils.showToast("Data berhasil disimpan");
+    } catch (error) {
+      console.error("Simpan transaksi gagal:", error);
+      KalkulatorUtils.showToast("Gagal simpan data");
+    }
   }
 
   function bindEvents() {
@@ -401,5 +423,6 @@
   window.setTimeout(hideSplash, 2200);
   registerServiceWorker();
   window.exportPDF = exportPDF;
+  window.simpanRiwayat = simpanRiwayat;
 })();
 
