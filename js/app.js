@@ -475,15 +475,30 @@
         KalkulatorUtils.showToast("Isi Kode User dulu");
         return;
       }
-      KalkulatorStorage.saveUserCode(code);
-      updateAuthUI();
-      hasilTerakhir = null;
-      KalkulatorStorage.clearLastCalculation();
-      resetResult();
-      reloadDataByActiveCode();
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-      KalkulatorUtils.showToast("Kode User aktif");
+      window.KalkulatorSupabase.client
+        .from("KodeUser")
+        .select("kode_user,aktif")
+        .eq("kode_user", code)
+        .maybeSingle()
+        .then(function (res) {
+          if (res.error) {
+            KalkulatorUtils.showToast("Validasi kode gagal");
+            return;
+          }
+          if (!res.data || res.data.aktif === false) {
+            KalkulatorUtils.showToast("Kode User tidak valid / nonaktif");
+            return;
+          }
+          KalkulatorStorage.saveUserCode(code);
+          updateAuthUI();
+          hasilTerakhir = null;
+          KalkulatorStorage.clearLastCalculation();
+          resetResult();
+          reloadDataByActiveCode();
+          modal.classList.add("hidden");
+          modal.classList.remove("flex");
+          KalkulatorUtils.showToast("Kode User aktif");
+        });
     });
   }
 
