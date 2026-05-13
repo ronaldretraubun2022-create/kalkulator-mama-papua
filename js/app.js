@@ -429,6 +429,26 @@
     el("authOpenBtn").classList.toggle("hidden", !!currentUserCode);
   }
 
+  async function reloadDataByActiveCode() {
+    const activeCode = KalkulatorStorage.readUserCode();
+    if (!activeCode) {
+      hasilTerakhir = null;
+      KalkulatorStorage.clearLastCalculation();
+      resetResult();
+      return;
+    }
+    const result = await KalkulatorStorage.loadTransactionsHybrid();
+    const latest = result && result.data && result.data.length ? result.data[0] : null;
+    if (latest) {
+      KalkulatorStorage.saveLastCalculation(latest);
+      restoreData(latest);
+    } else {
+      hasilTerakhir = null;
+      KalkulatorStorage.clearLastCalculation();
+      resetResult();
+    }
+  }
+
   async function initAuth() {
     const modal = el("authModal");
     const openBtn = el("authOpenBtn");
@@ -444,6 +464,9 @@
     logoutBtn.addEventListener("click", function () {
       KalkulatorStorage.clearUserCode();
       updateAuthUI();
+      hasilTerakhir = null;
+      KalkulatorStorage.clearLastCalculation();
+      resetResult();
       KalkulatorUtils.showToast("Logout berhasil");
     });
     loginBtn.addEventListener("click", function () {
@@ -454,6 +477,10 @@
       }
       KalkulatorStorage.saveUserCode(code);
       updateAuthUI();
+      hasilTerakhir = null;
+      KalkulatorStorage.clearLastCalculation();
+      resetResult();
+      reloadDataByActiveCode();
       modal.classList.add("hidden");
       modal.classList.remove("flex");
       KalkulatorUtils.showToast("Kode User aktif");
@@ -504,24 +531,12 @@
       bindEvents();
       initAuth();
       bindNetworkEvents();
-      restoreData(KalkulatorStorage.readLastCalculation());
-      KalkulatorStorage.loadTransactionsHybrid()
-        .then(function (result) {
-          const latest = result && result.data && result.data.length ? result.data[0] : null;
-          if (latest) {
-            KalkulatorStorage.saveLastCalculation({ ...KalkulatorStorage.readLastCalculation(), ...latest });
-          }
-          if (result && result.source === "supabase") {
-            KalkulatorUtils.showToast("Data transaksi tersinkron");
-          } else if (result && result.source === "no_code") {
-            KalkulatorUtils.showToast("Masukkan Kode User untuk memuat riwayat");
-          } else if (result && result.source === "local_fallback") {
-            KalkulatorUtils.showToast("Koneksi bermasalah, pakai data lokal");
-          }
-        })
-        .catch(function () {
-          KalkulatorUtils.showToast("Gagal memuat dari database");
-        });
+      reloadDataByActiveCode().then(function () {
+        const activeCode = KalkulatorStorage.readUserCode();
+        if (!activeCode) {
+          KalkulatorUtils.showToast("Masukkan Kode User untuk memuat riwayat");
+        }
+      });
       if (!hasilTerakhir) resetResult();
     } catch (error) {
       console.error("Init kalkulator gagal:", error);

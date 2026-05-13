@@ -1,6 +1,6 @@
 const STORAGE_KEY = "kalkulator-jual-beli-mama-papua-v1";
 const USER_CODE_KEY = "kalkulator-mama-papua-kode-user";
-const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
+const TRANSACTIONS_KEY = "kalkulator-mama-papua-transaksi";
 
 (function () {
   function readUserCode() {
@@ -18,7 +18,7 @@ const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
     localStorage.removeItem(USER_CODE_KEY);
   }
   function scopedKey(kodeUser) {
-    return `${TRANSACTIONS_KEY}:${(kodeUser || "guest").toUpperCase()}`;
+    return `${TRANSACTIONS_KEY}-${(kodeUser || "guest").toUpperCase()}`;
   }
   function getRiwayat(kodeUser) {
     try {
