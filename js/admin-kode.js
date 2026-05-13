@@ -21,7 +21,17 @@
   }
 
   function renderRows() {
-    el("kodeRows").innerHTML = rows.map(function (r) {
+    const kodeQ = (el("searchKode").value || "").trim().toLowerCase();
+    const namaQ = (el("searchNama").value || "").trim().toLowerCase();
+    const lokasiQ = (el("searchLokasi").value || "").trim().toLowerCase();
+    const filtered = rows.filter(function (r) {
+      const kodeOk = !kodeQ || String(r.kode_user || "").toLowerCase().includes(kodeQ);
+      const namaOk = !namaQ || String(r.nama_user || "").toLowerCase().includes(namaQ);
+      const lokasiOk = !lokasiQ || String(r.lokasi || "").toLowerCase().includes(lokasiQ);
+      return kodeOk && namaOk && lokasiOk;
+    });
+
+    el("kodeRows").innerHTML = filtered.map(function (r) {
       return `<tr class="border-t border-[#F2D479]/20">
         <td class="px-3 py-2">${r.kode_user || ""}</td>
         <td class="px-3 py-2">${r.nama_user || ""}</td>
@@ -50,6 +60,7 @@
 
   async function saveKode() {
     const supabase = window.KalkulatorSupabase.client;
+    const editingId = el("editingId").value;
     const payload = {
       kode_user: (el("kodeUser").value || "").trim().toUpperCase(),
       nama_user: (el("namaUser").value || "").trim(),
@@ -58,11 +69,24 @@
       aktif: true,
     };
     if (!payload.kode_user) return;
-    const { error } = await supabase.from("KodeUser").insert([payload]);
+    let error = null;
+    if (editingId) {
+      const res = await supabase.from("KodeUser").update({
+        nama_user: payload.nama_user,
+        no_hp: payload.no_hp,
+        lokasi: payload.lokasi,
+      }).eq("id", editingId);
+      error = res.error;
+    } else {
+      const res = await supabase.from("KodeUser").insert([payload]);
+      error = res.error;
+    }
     if (error) {
       console.error("Simpan kode gagal:", error);
       return;
     }
+    el("editingId").value = "";
+    el("kodeUser").value = "";
     el("namaUser").value = "";
     el("noHp").value = "";
     el("lokasi").value = "";
@@ -89,6 +113,7 @@
       if (editId) {
         const row = rows.find(function (r) { return String(r.id) === String(editId); });
         if (!row) return;
+        el("editingId").value = String(row.id);
         el("kodeUser").value = row.kode_user || "";
         el("namaUser").value = row.nama_user || "";
         el("noHp").value = row.no_hp || "";
@@ -108,6 +133,9 @@
   document.addEventListener("DOMContentLoaded", function () {
     el("generateBtn").addEventListener("click", generateKode);
     el("saveBtn").addEventListener("click", saveKode);
+    el("searchKode").addEventListener("input", renderRows);
+    el("searchNama").addEventListener("input", renderRows);
+    el("searchLokasi").addEventListener("input", renderRows);
     bindTableActions();
     loadKode();
   });

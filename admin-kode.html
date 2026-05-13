@@ -16,6 +16,7 @@
       </header>
 
       <section class="mb-4 grid gap-3 md:grid-cols-5">
+        <input id="editingId" type="hidden" />
         <input id="kodeUser" class="field-input md:col-span-1" placeholder="MAMA-0001" />
         <input id="namaUser" class="field-input md:col-span-1" placeholder="Nama User" />
         <input id="noHp" class="field-input md:col-span-1" placeholder="No HP" />
@@ -24,6 +25,11 @@
           <button id="generateBtn" class="action-button flex-1 bg-mama-green text-[#fff7d6]">Generate</button>
           <button id="saveBtn" class="action-button flex-1 bg-mama-gold text-black">Simpan</button>
         </div>
+      </section>
+      <section class="mb-4 grid gap-3 md:grid-cols-3">
+        <input id="searchKode" class="field-input" placeholder="Cari kode_user" />
+        <input id="searchNama" class="field-input" placeholder="Cari nama_user" />
+        <input id="searchLokasi" class="field-input" placeholder="Cari lokasi" />
       </section>
 
       <section class="overflow-auto rounded-2xl border border-[#F2D479]/30 bg-[#0f0f0f]/40">
