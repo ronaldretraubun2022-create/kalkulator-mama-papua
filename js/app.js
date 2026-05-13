@@ -334,7 +334,7 @@
       const saveInfo = await KalkulatorStorage.saveTransaction(result);
       KalkulatorStorage.saveLastCalculation(result);
       if (saveInfo.source === "blocked_no_auth") {
-        KalkulatorUtils.showToast("Login dulu untuk simpan data");
+        KalkulatorUtils.showToast("Masukkan Kode User dulu");
       } else if (saveInfo.source === "supabase") {
         KalkulatorUtils.showToast("Data tersimpan ke Supabase");
       } else if (saveInfo.source === "local_offline" || saveInfo.source === "local_fallback") {
@@ -513,6 +513,8 @@
           }
           if (result && result.source === "supabase") {
             KalkulatorUtils.showToast("Data transaksi tersinkron");
+          } else if (result && result.source === "no_code") {
+            KalkulatorUtils.showToast("Masukkan Kode User untuk memuat riwayat");
           } else if (result && result.source === "local_fallback") {
             KalkulatorUtils.showToast("Koneksi bermasalah, pakai data lokal");
           }

@@ -60,6 +60,7 @@ const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
       hargaPremium: Number(row.harga_premium || 0),
       hargaKolektor: Number(row.harga_kolektor || 0),
       kodeUser: row.kode_user || "",
+      userId: row.user_id || null,
     };
   }
   async function saveTransaction(data) {
@@ -124,7 +125,7 @@ const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
     const { data, error } = await supabase
       .from(table)
       .select(
-        "id,kode_user,nama_barang,jumlah_barang,total_biaya,modal_barang,harga_reguler,harga_premium,harga_kolektor",
+        "id,nama_barang,jumlah_barang,total_biaya,modal_barang,harga_reguler,harga_premium,harga_kolektor,user_id,kode_user",
       )
       .eq("kode_user", kodeUser)
       .order("id", { ascending: false })
