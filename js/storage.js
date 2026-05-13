@@ -15,6 +15,23 @@ const KalkulatorStorage = {
     localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(data || []));
   },
 
+  readLastCalculation() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+    } catch (error) {
+      console.error("Gagal membaca kalkulasi terakhir:", error);
+      return null;
+    }
+  },
+
+  saveLastCalculation(data) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.error("Gagal menyimpan kalkulasi terakhir:", error);
+    }
+  },
+
   async saveTransaction(data) {
     const localData = this.getRiwayat();
 
@@ -24,7 +41,9 @@ const KalkulatorStorage = {
       createdAt: new Date().toISOString(),
       namaBarang: data.namaBarang || data.nama_barang || "Tanpa Nama",
       jumlahBarang: Number(data.jumlahBarang || data.jumlah_barang || 0),
-      totalBiayaProduksi: Number(data.totalBiayaProduksi || data.total_biaya || 0),
+      totalBiayaProduksi: Number(
+        data.totalBiayaProduksi || data.total_biaya || 0,
+      ),
       modalPerBarang: Number(data.modalPerBarang || data.modal_barang || 0),
       hargaReguler: Number(data.hargaReguler || data.harga_reguler || 0),
     };
@@ -67,7 +86,9 @@ const KalkulatorStorage = {
 
     const { data, error } = await supabase
       .from(table)
-      .select("id,nama_barang,jumlah_barang,total_biaya,modal_barang,harga_reguler")
+      .select(
+        "id,nama_barang,jumlah_barang,total_biaya,modal_barang,harga_reguler",
+      )
       .order("id", { ascending: false })
       .limit(100);
 
