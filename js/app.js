@@ -19,6 +19,7 @@
   let eventsBound = false;
   let hargaChart = null;
   let currentUserCode = "";
+  let isSyncingOnline = false;
 
   function el(id) {
     return document.getElementById(id);
@@ -347,6 +348,35 @@
     }
   }
 
+  function updateConnectionStatus(isOnline) {
+    if (isOnline) {
+      KalkulatorUtils.showToast("Online - data tersinkron");
+    } else {
+      KalkulatorUtils.showToast("Offline - data disimpan lokal");
+    }
+  }
+
+  async function syncWhenOnline() {
+    if (isSyncingOnline) return;
+    isSyncingOnline = true;
+    try {
+      const result = await KalkulatorStorage.loadTransactionsHybrid();
+      if (result && result.source === "supabase") {
+        const latest = result.data && result.data.length ? result.data[0] : null;
+        if (latest) {
+          KalkulatorStorage.saveLastCalculation({
+            ...KalkulatorStorage.readLastCalculation(),
+            ...latest,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Sync online gagal:", error);
+    } finally {
+      isSyncingOnline = false;
+    }
+  }
+
   function bindEvents() {
     if (eventsBound) return;
     eventsBound = true;
@@ -454,6 +484,17 @@
     });
   }
 
+  function bindNetworkEvents() {
+    updateConnectionStatus(navigator.onLine);
+    window.addEventListener("online", function () {
+      updateConnectionStatus(true);
+      syncWhenOnline();
+    });
+    window.addEventListener("offline", function () {
+      updateConnectionStatus(false);
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     try {
       if (window.lucide) {
@@ -462,6 +503,7 @@
       KalkulatorUtils.showToast("Memuat data transaksi...");
       bindEvents();
       initAuth();
+      bindNetworkEvents();
       restoreData(KalkulatorStorage.readLastCalculation());
       KalkulatorStorage.loadTransactionsHybrid()
         .then(function (result) {
