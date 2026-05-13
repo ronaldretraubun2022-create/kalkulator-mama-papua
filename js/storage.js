@@ -70,7 +70,6 @@ const KalkulatorStorage = {
 
     if (error) {
       console.error("Simpan Supabase gagal:", error);
-      return payload;
     }
 
     return payload;
