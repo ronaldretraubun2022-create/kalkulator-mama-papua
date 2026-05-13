@@ -329,7 +329,7 @@
       return;
     }
     try {
-      const saveInfo = await KalkulatorStorage.saveTransactionHybrid(result);
+      const saveInfo = await KalkulatorStorage.saveTransaction(result);
       KalkulatorStorage.saveLastCalculation(result);
       if (saveInfo.source === "supabase") {
         KalkulatorUtils.showToast("Data tersimpan ke Supabase");

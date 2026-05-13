@@ -1,86 +1,126 @@
 const STORAGE_KEY = "kalkulator-jual-beli-mama-papua-v1";
-const TRANSACTIONS_KEY = "kalkulator-mama-papua-transaksi-v1";
+const TRANSACTIONS_KEY = "kalkulator-mama-papua-riwayat-v1";
 
-const KalkulatorStorage = {
-  getRiwayat() {
+(function () {
+  function getRiwayat() {
     try {
-      return JSON.parse(localStorage.getItem(TRANSACTIONS_KEY)) || [];
+      const raw = localStorage.getItem(TRANSACTIONS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
-      console.error("Gagal membaca transaksi:", error);
+      console.error("Gagal membaca riwayat lokal:", error);
       return [];
     }
-  },
+  }
 
-  setRiwayat(data) {
-    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(data || []));
-  },
+  function setRiwayat(list) {
+    localStorage.setItem(
+      TRANSACTIONS_KEY,
+      JSON.stringify(Array.isArray(list) ? list : []),
+    );
+  }
 
-  readLastCalculation() {
+  function readLastCalculation() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
     } catch (error) {
       console.error("Gagal membaca kalkulasi terakhir:", error);
       return null;
     }
-  },
+  }
 
-  saveLastCalculation(data) {
+  function saveLastCalculation(data) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data || null));
     } catch (error) {
       console.error("Gagal menyimpan kalkulasi terakhir:", error);
     }
-  },
+  }
 
-  async saveTransaction(data) {
-    const localData = this.getRiwayat();
+  function clearLastCalculation() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
 
-    const payload = {
-      id: Date.now(),
+  function mapRowToApp(row) {
+    return {
+      id: String(row.id),
       savedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      namaBarang: data.namaBarang || data.nama_barang || "Tanpa Nama",
-      jumlahBarang: Number(data.jumlahBarang || data.jumlah_barang || 0),
-      totalBiayaProduksi: Number(
-        data.totalBiayaProduksi || data.total_biaya || 0,
-      ),
-      modalPerBarang: Number(data.modalPerBarang || data.modal_barang || 0),
-      hargaReguler: Number(data.hargaReguler || data.harga_reguler || 0),
+      namaBarang: row.nama_barang || "",
+      jumlahBarang: Number(row.jumlah_barang || 0),
+      totalBiayaProduksi: Number(row.total_biaya || 0),
+      modalPerBarang: Number(row.modal_barang || 0),
+      hargaReguler: Number(row.harga_reguler || 0),
+      hargaPremium: Number(row.harga_reguler || 0),
+      hargaKolektor: Number(row.harga_reguler || 0),
+    };
+  }
+
+  async function saveTransaction(data) {
+    const localItem = {
+      id:
+        window.KalkulatorUtils && KalkulatorUtils.uid
+          ? KalkulatorUtils.uid()
+          : `tx-${Date.now()}`,
+      savedAt: new Date().toISOString(),
+      namaBarang: data.namaBarang || "Tanpa Nama",
+      jumlahBarang: Number(data.jumlahBarang || 0),
+      totalBiayaProduksi: Number(data.totalBiayaProduksi || 0),
+      modalPerBarang: Number(data.modalPerBarang || 0),
+      hargaReguler: Number(data.hargaReguler || 0),
+      hargaPremium: Number(data.hargaPremium || data.hargaReguler || 0),
+      hargaKolektor: Number(data.hargaKolektor || data.hargaReguler || 0),
     };
 
-    localData.unshift(payload);
-    this.setRiwayat(localData);
+    const current = getRiwayat();
+    current.unshift(localItem);
+    setRiwayat(current);
 
-    const supabase = window.KalkulatorSupabase?.client;
-    const table = window.KalkulatorSupabase?.table || "Riwayat";
+    const supabase =
+      window.KalkulatorSupabase && window.KalkulatorSupabase.client;
+    const table =
+      (window.KalkulatorSupabase && window.KalkulatorSupabase.table) ||
+      "Riwayat";
 
-    if (!supabase || !navigator.onLine) {
-      return payload;
+    if (!navigator.onLine || !supabase) {
+      return { source: "local_offline", item: localItem };
     }
 
-    const { error } = await supabase.from(table).insert([
-      {
-        nama_barang: payload.namaBarang,
-        jumlah_barang: payload.jumlahBarang,
-        total_biaya: payload.totalBiayaProduksi,
-        modal_barang: payload.modalPerBarang,
-        harga_reguler: payload.hargaReguler,
-      },
-    ]);
+    const payload = {
+      nama_barang: localItem.namaBarang,
+      jumlah_barang: localItem.jumlahBarang,
+      total_biaya: localItem.totalBiayaProduksi,
+      modal_barang: localItem.modalPerBarang,
+      harga_reguler: localItem.hargaReguler,
+    };
 
+    const { data: inserted, error } = await supabase
+      .from(table)
+      .insert([payload])
+      .select()
+      .single();
     if (error) {
       console.error("Simpan Supabase gagal:", error);
+      return {
+        source: "local_fallback",
+        item: localItem,
+        error: error.message,
+      };
     }
 
-    return payload;
-  },
+    return { source: "supabase", item: localItem, remote: inserted };
+  }
 
-  async loadTransactions() {
-    const supabase = window.KalkulatorSupabase?.client;
-    const table = window.KalkulatorSupabase?.table || "Riwayat";
+  async function loadTransactions() {
+    const supabase =
+      window.KalkulatorSupabase && window.KalkulatorSupabase.client;
+    const table =
+      (window.KalkulatorSupabase && window.KalkulatorSupabase.table) ||
+      "Riwayat";
+    const local = getRiwayat();
 
-    if (!supabase || !navigator.onLine) {
-      return this.getRiwayat();
+    if (!navigator.onLine || !supabase) {
+      return { source: "local", data: local };
     }
 
     const { data, error } = await supabase
@@ -93,31 +133,30 @@ const KalkulatorStorage = {
 
     if (error) {
       console.error("Load Supabase gagal, fallback local:", error);
-      return this.getRiwayat();
+      return { source: "local_fallback", data: local, error: error.message };
     }
 
-    const mapped = (data || []).map((row) => ({
-      id: row.id,
-      savedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      namaBarang: row.nama_barang,
-      jumlahBarang: Number(row.jumlah_barang || 0),
-      totalBiayaProduksi: Number(row.total_biaya || 0),
-      modalPerBarang: Number(row.modal_barang || 0),
-      hargaReguler: Number(row.harga_reguler || 0),
-    }));
+    const mapped = (data || []).map(mapRowToApp);
+    setRiwayat(mapped);
+    return { source: "supabase", data: mapped };
+  }
 
-    this.setRiwayat(mapped);
-    return mapped;
-  },
+  async function loadTransactionsHybrid() {
+    return loadTransactions();
+  }
 
-  async loadTransactionsHybrid() {
-    return this.loadTransactions();
-  },
+  function readLatestTransaction() {
+    const all = getRiwayat();
+    return all.length ? all[0] : null;
+  }
 
-  clearRiwayat() {
-    localStorage.removeItem(TRANSACTIONS_KEY);
-  },
-};
-
-window.KalkulatorStorage = KalkulatorStorage;
+  window.KalkulatorStorage = {
+    readLastCalculation,
+    saveLastCalculation,
+    clearLastCalculation,
+    loadTransactions,
+    loadTransactionsHybrid,
+    saveTransaction,
+    readLatestTransaction,
+  };
+})();
