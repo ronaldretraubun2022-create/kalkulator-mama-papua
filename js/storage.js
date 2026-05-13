@@ -111,6 +111,10 @@ const KalkulatorStorage = {
     return mapped;
   },
 
+  async loadTransactionsHybrid() {
+    return this.loadTransactions();
+  },
+
   clearRiwayat() {
     localStorage.removeItem(TRANSACTIONS_KEY);
   },
