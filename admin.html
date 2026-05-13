@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Admin - Kalkulator Mama Papua</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="./css/styles.css?v=6" />
+  </head>
+  <body class="min-h-screen bg-[linear-gradient(135deg,#0f0f0f_0%,#1a1110_40%,#102117_100%)] text-[#fff7d6]">
+    <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-black text-mama-gold">Dashboard Admin</h1>
+        <a href="./index.html" class="rounded-xl bg-mama-gold px-4 py-2 text-sm font-black text-black">Kembali</a>
+      </header>
+
+      <section class="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <article class="result-card"><p>Total Transaksi</p><h3 id="totalTransaksi">0</h3></article>
+        <article class="result-card"><p>User Unik</p><h3 id="totalUser">0</h3></article>
+        <article class="result-card"><p>Total Biaya Produksi</p><h3 id="sumBiaya">Rp 0</h3></article>
+        <article class="result-card"><p>Total Harga Reguler</p><h3 id="sumReguler">Rp 0</h3></article>
+        <article class="result-card"><p>Total Harga Premium</p><h3 id="sumPremium">Rp 0</h3></article>
+        <article class="result-card"><p>Total Harga Kolektor</p><h3 id="sumKolektor">Rp 0</h3></article>
+      </section>
+
+      <section class="mb-4 grid gap-3 sm:grid-cols-3">
+        <input id="filterKode" class="field-input" placeholder="Filter kode_user" />
+        <input id="filterNama" class="field-input" placeholder="Filter nama_barang" />
+        <button id="exportCsvBtn" class="action-button bg-mama-green text-[#fff7d6]">Export CSV</button>
+      </section>
+
+      <section class="overflow-auto rounded-2xl border border-[#F2D479]/30 bg-[#0f0f0f]/40">
+        <table class="min-w-full text-sm">
+          <thead class="bg-[#1a1110] text-mama-gold">
+            <tr>
+              <th class="px-3 py-2 text-left">kode_user</th>
+              <th class="px-3 py-2 text-left">nama_barang</th>
+              <th class="px-3 py-2 text-left">jumlah_barang</th>
+              <th class="px-3 py-2 text-left">total_biaya</th>
+              <th class="px-3 py-2 text-left">modal_barang</th>
+              <th class="px-3 py-2 text-left">harga_reguler</th>
+              <th class="px-3 py-2 text-left">harga_premium</th>
+              <th class="px-3 py-2 text-left">harga_kolektor</th>
+            </tr>
+          </thead>
+          <tbody id="adminRows"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="./js/utils.js?v=7"></script>
+    <script src="./js/supabase.js?v=1"></script>
+    <script src="./js/admin.js?v=1"></script>
+  </body>
+</html>
