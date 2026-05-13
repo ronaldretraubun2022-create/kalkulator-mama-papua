@@ -1,13 +1,14 @@
-const CACHE_NAME = "kalkulator-mama-papua-v5";
+const CACHE_VERSION = "v6-2026-05-14";
+const CACHE_NAME = `kalkulator-mama-papua-${CACHE_VERSION}`;
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./css/styles.css",
-  "./js/utils.js",
-  "./js/storage.js",
-  "./js/app.js",
+  "./css/styles.css?v=6",
+  "./js/utils.js?v=6",
+  "./js/storage.js?v=6",
+  "./js/app.js?v=6",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
@@ -33,6 +34,10 @@ self.addEventListener("activate", function (event) {
           return null;
         })
       );
+    }).then(function () {
+      return self.registration && self.registration.navigationPreload
+        ? self.registration.navigationPreload.enable()
+        : Promise.resolve();
     })
   );
   clients.claim();
@@ -69,19 +74,33 @@ self.addEventListener("fetch", function (event) {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then(function (response) {
-        if (isLocal || response.type === "opaque") {
+  const isStaticCore =
+    isLocal &&
+    (requestUrl.pathname.endsWith(".js") ||
+      requestUrl.pathname.endsWith(".css") ||
+      requestUrl.pathname.endsWith(".json"));
+
+  if (isStaticCore) {
+    event.respondWith(
+      fetch(event.request, { cache: "no-store" })
+        .then(function (response) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(function (cache) {
             cache.put(event.request, copy);
           });
-        }
-        return response;
-      })
-      .catch(function () {
-        return caches.match(event.request);
-      })
+          return response;
+        })
+        .catch(function () {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request).then(function (cached) {
+      if (cached) return cached;
+      return fetch(event.request);
+    })
   );
 });
