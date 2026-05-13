@@ -1,173 +1,99 @@
 const STORAGE_KEY = "kalkulator-jual-beli-mama-papua-v1";
-const SETTINGS_KEY = "kalkulator-mama-papua-settings-v1";
 const TRANSACTIONS_KEY = "kalkulator-mama-papua-transaksi-v1";
 
-if (!STORAGE_KEY) {
-  console.error("STORAGE_KEY belum dibuat");
-}
-
-(function () {
-  function readLastCalculation() {
+const KalkulatorStorage = {
+  getRiwayat() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (error) {
-      console.error("Gagal membaca data kalkulator:", error);
-      return null;
-    }
-  }
-
-  function saveLastCalculation(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data || null));
-  }
-
-  function clearLastCalculation() {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-
-  function readSettings() {
-    try {
-      return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-    } catch (error) {
-      console.error("Gagal membaca pengaturan:", error);
-      return {};
-    }
-  }
-
-  function saveSettings(settings) {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings || {}));
-  }
-
-  function readTransactions() {
-    try {
-      const raw = localStorage.getItem(TRANSACTIONS_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
+      return JSON.parse(localStorage.getItem(TRANSACTIONS_KEY)) || [];
     } catch (error) {
       console.error("Gagal membaca transaksi:", error);
       return [];
     }
-  }
+  },
 
-  function saveTransactions(list) {
-    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(Array.isArray(list) ? list : []));
-  }
+  setRiwayat(data) {
+    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(data || []));
+  },
 
-  function saveTransaction(data) {
-    const current = readTransactions();
-    const item = {
-      id: (window.KalkulatorUtils && KalkulatorUtils.uid ? KalkulatorUtils.uid() : `tx-${Date.now()}`),
-      savedAt: new Date().toISOString(),
-      ...data,
-    };
-    current.unshift(item);
-    saveTransactions(current);
-    return item;
-  }
+  async saveTransaction(data) {
+    const localData = this.getRiwayat();
 
-  async function saveTransactionRemote(data) {
-    const client = window.KalkulatorSupabase && window.KalkulatorSupabase.client;
-    const table = (window.KalkulatorSupabase && window.KalkulatorSupabase.table) || "transaksi";
-    if (!client) return { ok: false, reason: "supabase_not_configured" };
     const payload = {
-      nama_barang: data.namaBarang || "",
-      modal: Number(data.modalPerBarang || 0),
-      jual: Number(data.hargaReguler || 0),
-      keuntungan: Number((data.hargaReguler || 0) - (data.modalPerBarang || 0)),
+      id: Date.now(),
+      savedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      namaBarang: data.namaBarang || data.nama_barang || "Tanpa Nama",
+      jumlahBarang: Number(data.jumlahBarang || data.jumlah_barang || 0),
+      totalBiayaProduksi: Number(data.totalBiayaProduksi || data.total_biaya || 0),
+      modalPerBarang: Number(data.modalPerBarang || data.modal_barang || 0),
+      hargaReguler: Number(data.hargaReguler || data.harga_reguler || 0),
     };
-    const response = await client.from(table).insert(payload).select().single();
-    if (response.error) {
-      throw response.error;
+
+    localData.unshift(payload);
+    this.setRiwayat(localData);
+
+    const supabase = window.KalkulatorSupabase?.client;
+    const table = window.KalkulatorSupabase?.table || "Riwayat";
+
+    if (!supabase || !navigator.onLine) {
+      return payload;
     }
-    return { ok: true, row: response.data };
-  }
 
-  async function saveTransactionHybrid(data) {
-    const localItem = saveTransaction(data);
-    if (!navigator.onLine) return { source: "local_offline", item: localItem };
-    try {
-      const remote = await saveTransactionRemote(data);
-      if (remote.ok) return { source: "supabase", item: localItem, remote: remote.row };
-      return { source: "local_only", item: localItem };
-    } catch (error) {
-      console.error("Simpan Supabase gagal, fallback local:", error);
-      return { source: "local_fallback", item: localItem, error: String(error && error.message ? error.message : error) };
+    const { error } = await supabase.from(table).insert([
+      {
+        nama_barang: payload.namaBarang,
+        jumlah_barang: payload.jumlahBarang,
+        total_biaya: payload.totalBiayaProduksi,
+        modal_barang: payload.modalPerBarang,
+        harga_reguler: payload.hargaReguler,
+      },
+    ]);
+
+    if (error) {
+      console.error("Simpan Supabase gagal:", error);
+      return payload;
     }
-  }
 
-  async function loadTransactionsHybrid() {
-    const local = readTransactions();
-    const client = window.KalkulatorSupabase && window.KalkulatorSupabase.client;
-    const table = (window.KalkulatorSupabase && window.KalkulatorSupabase.table) || "transaksi";
-    if (!navigator.onLine || !client) return { source: "local", data: local };
+    return payload;
+  },
 
-    try {
-      const response = await client
-        .from(table)
-        .select("id,created_at,nama_barang,modal,jual,keuntungan")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (response.error) throw response.error;
+  async loadTransactions() {
+    const supabase = window.KalkulatorSupabase?.client;
+    const table = window.KalkulatorSupabase?.table || "Riwayat";
 
-      const mapped = (response.data || []).map(function (row) {
-        const modal = Number(row.modal || 0);
-        const hargaReguler = Number(row.jual || 0);
-        const keuntungan = Number(row.keuntungan || (hargaReguler - modal));
-        return {
-          id: String(row.id),
-          savedAt: row.created_at,
-          createdAt: row.created_at,
-          namaBarang: row.nama_barang || "",
-          modalPerBarang: modal,
-          hargaReguler: hargaReguler,
-          marginNominal: keuntungan,
-          hargaPremium: hargaReguler,
-          hargaKolektor: hargaReguler,
-          totalBiayaProduksi: modal,
-        };
-      });
-      if (mapped.length) saveTransactions(mapped);
-      return { source: "supabase", data: mapped.length ? mapped : local };
-    } catch (error) {
+    if (!supabase || !navigator.onLine) {
+      return this.getRiwayat();
+    }
+
+    const { data, error } = await supabase
+      .from(table)
+      .select("id,nama_barang,jumlah_barang,total_biaya,modal_barang,harga_reguler")
+      .order("id", { ascending: false })
+      .limit(100);
+
+    if (error) {
       console.error("Load Supabase gagal, fallback local:", error);
-      return { source: "local_fallback", data: local, error: String(error && error.message ? error.message : error) };
+      return this.getRiwayat();
     }
-  }
 
-  function updateTransaction(id, patch) {
-    const current = readTransactions();
-    const next = current.map(function (item) {
-      if (item.id !== id) return item;
-      return { ...item, ...patch, updatedAt: new Date().toISOString() };
-    });
-    saveTransactions(next);
-    return next.find(function (item) { return item.id === id; }) || null;
-  }
+    const mapped = (data || []).map((row) => ({
+      id: row.id,
+      savedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      namaBarang: row.nama_barang,
+      jumlahBarang: Number(row.jumlah_barang || 0),
+      totalBiayaProduksi: Number(row.total_biaya || 0),
+      modalPerBarang: Number(row.modal_barang || 0),
+      hargaReguler: Number(row.harga_reguler || 0),
+    }));
 
-  function deleteTransaction(id) {
-    const current = readTransactions();
-    const next = current.filter(function (item) { return item.id !== id; });
-    saveTransactions(next);
-    return next;
-  }
+    this.setRiwayat(mapped);
+    return mapped;
+  },
 
-  function readLatestTransaction() {
-    const current = readTransactions();
-    return current.length ? current[0] : null;
-  }
+  clearRiwayat() {
+    localStorage.removeItem(TRANSACTIONS_KEY);
+  },
+};
 
-  window.KalkulatorStorage = {
-    readLastCalculation,
-    saveLastCalculation,
-    clearLastCalculation,
-    readSettings,
-    saveSettings,
-    readTransactions,
-    saveTransaction,
-    saveTransactionHybrid,
-    loadTransactionsHybrid,
-    updateTransaction,
-    deleteTransaction,
-    readLatestTransaction,
-  };
-})();
+window.KalkulatorStorage = KalkulatorStorage;
